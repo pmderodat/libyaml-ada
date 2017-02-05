@@ -1,0 +1,50 @@
+project LibYAML_Ada is
+
+   for Languages use ("Ada", "C");
+   for Source_Dirs use ("src");
+   for Object_Dir use "obj";
+
+   --  For now, don't build this project as a library. Instead, let each user
+   --  pull this into its build system.
+
+   -----------------
+   -- Build modes --
+   -----------------
+
+   type Build_Mode_Type is ("dev", "prod");
+   Build_Mode : Build_Mode_Type := external("BUILD_MODE", "dev");
+
+   Common_Cargs := ();
+   Ada_Cargs := ();
+   C_Cargs := ();
+
+   case Build_Mode is
+      when "dev"  =>
+         Common_Cargs := Common_Cargs & ("-g3", "-O0");
+         Ada_Cargs := Ada_Cargs & ("-gnata", "-gnatwae", "-gnatyg");
+
+      when "prod" =>
+         Common_Cargs := Common_Cargs & ("-g0", "-O2");
+   end case;
+
+   ---------------------
+   -- Compiler config --
+   ---------------------
+
+   package Compiler is
+      for Default_Switches ("Ada") use Common_Cargs & Ada_Cargs;
+      for Default_Switches ("C") use Common_Cargs & C_Cargs;
+   end Compiler;
+
+   -------------------
+   -- Linker config --
+   -------------------
+
+   package Linker is
+
+      for Linker_Options use ("-lyaml");
+      --  Make users link with libyaml, as we use its symbols
+
+   end Linker;
+
+end LibYAML_Ada;
