@@ -30,7 +30,8 @@ package YAML is
    --  Type of a node in a document
 
    type Node_Ref is private;
-   --  Reference to a node as part of a document
+   --  Reference to a node as part of a document. Such values must not outlive
+   --  the value for the document that owns them.
 
    No_Node_Ref : constant Node_Ref;
 
