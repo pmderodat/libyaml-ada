@@ -2,6 +2,7 @@ private with Ada.Finalization;
 
 private with Interfaces;
 private with Interfaces.C;
+private with Interfaces.C.Pointers;
 
 private with System;
 
@@ -43,6 +44,14 @@ package YAML is
    function Scalar_Value (Node : Node_Ref) return UTF8_String
       with Pre => Kind (Node) = Scalar_Node;
 
+   function Sequence_Length (Node : Node_Ref) return Natural
+      with Pre => Kind (Node) = Sequence_Node;
+   --  Return the number of items in the Node sequence
+
+   function Sequence_Item (Node : Node_Ref; Index : Positive) return Node_Ref
+      with Pre => Kind (Node) = Sequence_Node;
+   --  Return the Index'th item in Node. Index is 1-based.
+
    type Parser_Type is tagged limited private;
    --  YAML document parser
 
@@ -81,6 +90,7 @@ private
 
    subtype C_Int is Interfaces.C.int;
    subtype C_Index is C_Int range 0 .. C_Int'Last;
+   subtype C_Ptr_Diff is Interfaces.C.ptrdiff_t;
 
    type C_Char_Array is array (C_Index) of Interfaces.Unsigned_8;
    type C_Char_Access is access C_Char_Array;
@@ -140,7 +150,13 @@ private
    type C_Tag_Directive_Access is access C_Tag_Directive_T;
 
    subtype C_Node_Item_T is C_Int;
-   type C_Node_Item_Access is access all C_Node_Item_T;
+   type C_Node_Item_Array is array (C_Index range <>) of aliased C_Node_Item_T;
+   package C_Node_Item_Accesses is new Interfaces.C.Pointers
+     (Index              => C_Index,
+      Element            => C_Node_Item_T,
+      Element_Array      => C_Node_Item_Array,
+      Default_Terminator => -1);
+   subtype C_Node_Item_Access is C_Node_Item_Accesses.Pointer;
 
    type C_Node_Pair_T is record
       Key, Value : C_Int;

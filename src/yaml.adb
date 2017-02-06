@@ -22,6 +22,12 @@ package body YAML is
          Convention    => C,
          External_Name => "yaml_document_get_root_node";
 
+   function C_Document_Get_Node
+     (Document : C_Document_Access;
+      Index    : C_Int) return C_Node_Access
+   with
+      Import, Convention => C, External_Name => "yaml_document_get_node";
+
    function C_Parser_Initialize (Parser : C_Parser_Access) return C_Int
       with Import, Convention => C, External_Name => "yaml_parser_initialize";
 
@@ -53,6 +59,11 @@ package body YAML is
 
    function Convert (S : String_Access) return C_Char_Access;
 
+   function Get_Node
+     (Document : Document_Type'Class; Index : C_Int) return Node_Ref;
+   --  Wrapper around C_Document_Get_Node. Raise a Constraint_Error if Index is
+   --  out of range.
+
    function Wrap
      (Document : Document_Type'Class; N : C_Node_Access) return Node_Ref
    is
@@ -63,6 +74,18 @@ package body YAML is
    begin
       return Char_Array'Unrestricted_Access;
    end Convert;
+
+   function Get_Node
+     (Document : Document_Type'Class; Index : C_Int) return Node_Ref
+   is
+      N : constant C_Node_Access :=
+         C_Document_Get_Node (Document.C_Doc'Unrestricted_Access, Index);
+   begin
+      if N = null then
+         raise Constraint_Error;
+      end if;
+      return Wrap (Document, N);
+   end Get_Node;
 
    ----------
    -- Misc --
@@ -123,6 +146,24 @@ package body YAML is
    begin
       return Result;
    end Scalar_Value;
+
+   function Sequence_Length (Node : Node_Ref) return Natural is
+      use C_Node_Item_Accesses;
+      Data : C_Node_Data renames Node.Node.Data;
+   begin
+      return Natural
+        (Data.Sequence.Items.Seq_Top - Data.Sequence.Items.Seq_Start);
+   end Sequence_Length;
+
+   function Sequence_Item (Node : Node_Ref; Index : Positive) return Node_Ref
+   is
+      use C_Node_Item_Accesses;
+      Data : C_Node_Data renames Node.Node.Data;
+      Item : constant C_Node_Item_Access :=
+         Data.Sequence.Items.Seq_Start + C_Ptr_Diff (Index - 1);
+   begin
+      return Get_Node (Node.Document.all, Item.all);
+   end Sequence_Item;
 
    procedure Set_Input_String
      (Parser   : in out Parser_Type'Class;
