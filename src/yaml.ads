@@ -50,7 +50,8 @@ package YAML is
    --  Return the number of items in the Node sequence/mapping
 
    function Item (Node : Node_Ref; Index : Positive) return Node_Ref
-      with Pre => Kind (Node) = Sequence_Node;
+      with Pre => Kind (Node) = Sequence_Node
+                  and then Index <= Length (Node);
    --  Return the Index'th item in Node. Index is 1-based.
 
    type Node_Pair is record
@@ -59,7 +60,8 @@ package YAML is
    --  Key/value asssociation in a mapping node
 
    function Item (Node : Node_Ref; Index : Positive) return Node_Pair
-      with Pre => Kind (Node) = Mapping_Node;
+      with Pre => Kind (Node) = Mapping_Node
+                  and then Index <= Length (Node);
    --  Return the Index'th key/value association in Node. Index is 1-based.
 
    function Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
