@@ -66,6 +66,11 @@ package YAML is
       with Pre => Kind (Node) = Mapping_Node;
    --  Return the Index'th key/value association in Node. Index is 1-based.
 
+   function Mapping_Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
+      with Pre => Kind (Node) = Mapping_Node;
+   --  Look for Key in the Node mapping. If there is one, return the
+   --  corresponding Value. Return No_Node_Ref otherwise.
+
    type Parser_Type is tagged limited private;
    --  YAML document parser
 

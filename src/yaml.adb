@@ -206,6 +206,23 @@ package body YAML is
               Value => Get_Node (Node.Document.all, Pair.Value));
    end Mapping_Item;
 
+   function Mapping_Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
+   is
+   begin
+      for I in 1 .. Mapping_Length (Node) loop
+         declare
+            Pair : constant Node_Pair := Mapping_Item (Node, I);
+         begin
+            if Kind (Pair.Key) = Scalar_Node
+               and then Scalar_Value (Pair.Key) = Key
+            then
+               return Pair.Value;
+            end if;
+         end;
+      end loop;
+      return No_Node_Ref;
+   end Mapping_Item;
+
    procedure Set_Input_String
      (Parser   : in out Parser_Type'Class;
       Input    : String;
