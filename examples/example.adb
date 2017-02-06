@@ -1,22 +1,33 @@
-with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Command_Line; use Ada.Command_Line;
+with Ada.Text_IO;      use Ada.Text_IO;
 
 with YAML;
 
 procedure Example is
 
-   procedure Process (S : String);
+   procedure Process_String (S : String);
+   procedure Process_File (Filename : String);
+   procedure Process (D : YAML.Document_Type);
    procedure Put (N : YAML.Node_Ref; Indent : Natural);
 
-   procedure Process (S : String) is
+   procedure Process_String (S : String) is
       P : YAML.Parser_Type;
    begin
       P.Set_Input_String (S, YAML.UTF8_Encoding);
-      declare
-         D : constant YAML.Document_Type := P.Load;
-         N : constant YAML.Node_Ref := D.Root_Node;
-      begin
-         Put (N, 0);
-      end;
+      Process (P.Load);
+   end Process_String;
+
+   procedure Process_File (Filename : String) is
+      P : YAML.Parser_Type;
+   begin
+      P.Set_Input_File (Filename, YAML.UTF8_Encoding);
+      Process (P.Load);
+   end Process_File;
+
+   procedure Process (D : YAML.Document_Type) is
+      N : constant YAML.Node_Ref := D.Root_Node;
+   begin
+      Put (N, 0);
       New_Line;
    end Process;
 
@@ -52,7 +63,13 @@ procedure Example is
    end Put;
 
 begin
-   Process ("1");
-   Process ("[1, 2, 3, a, null]");
-   Process ("foo: 1");
+   if Argument_Count = 0 then
+      Process_String ("1");
+      Process_String ("[1, 2, 3, a, null]");
+      Process_String ("foo: 1");
+   else
+      for I in 1 .. Argument_Count loop
+         Process_File (Argument (I));
+      end loop;
+   end if;
 end Example;
