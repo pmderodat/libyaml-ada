@@ -80,9 +80,9 @@ package YAML is
 private
 
    subtype C_Int is Interfaces.C.int;
+   subtype C_Index is C_Int range 0 .. C_Int'Last;
 
-   type C_Char_Array is
-      array (C_Int range 0 .. C_Int'Last) of Interfaces.Unsigned_8;
+   type C_Char_Array is array (C_Index) of Interfaces.Unsigned_8;
    type C_Char_Access is access C_Char_Array;
 
    type C_Node_T;
