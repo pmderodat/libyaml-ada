@@ -42,14 +42,14 @@ package YAML is
    function Kind (Node : Node_Ref) return Node_Kind;
    --  Return the type of a node
 
-   function Scalar_Value (Node : Node_Ref) return UTF8_String
+   function Value (Node : Node_Ref) return UTF8_String
       with Pre => Kind (Node) = Scalar_Node;
 
-   function Sequence_Length (Node : Node_Ref) return Natural
-      with Pre => Kind (Node) = Sequence_Node;
-   --  Return the number of items in the Node sequence
+   function Length (Node : Node_Ref) return Natural
+      with Pre => Kind (Node) in Sequence_Node | Mapping_Node;
+   --  Return the number of items in the Node sequence/mapping
 
-   function Sequence_Item (Node : Node_Ref; Index : Positive) return Node_Ref
+   function Item (Node : Node_Ref; Index : Positive) return Node_Ref
       with Pre => Kind (Node) = Sequence_Node;
    --  Return the Index'th item in Node. Index is 1-based.
 
@@ -58,15 +58,11 @@ package YAML is
    end record;
    --  Key/value asssociation in a mapping node
 
-   function Mapping_Length (Node : Node_Ref) return Natural
-      with Pre => Kind (Node) = Mapping_Node;
-   --  Return the number of key/value associations in the Node mapping
-
-   function Mapping_Item (Node : Node_Ref; Index : Positive) return Node_Pair
+   function Item (Node : Node_Ref; Index : Positive) return Node_Pair
       with Pre => Kind (Node) = Mapping_Node;
    --  Return the Index'th key/value association in Node. Index is 1-based.
 
-   function Mapping_Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
+   function Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
       with Pre => Kind (Node) = Mapping_Node;
    --  Look for Key in the Node mapping. If there is one, return the
    --  corresponding Value. Return No_Node_Ref otherwise.

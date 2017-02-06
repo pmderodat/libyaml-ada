@@ -161,23 +161,28 @@ package body YAML is
       return Node.Node.Kind;
    end Kind;
 
-   function Scalar_Value (Node : Node_Ref) return UTF8_String is
+   function Value (Node : Node_Ref) return UTF8_String is
       Data   : C_Node_Data renames Node.Node.Data;
       Result : UTF8_String (1 .. Natural (Data.Scalar.Length))
          with Address => Data.Scalar.Value.all'Address;
    begin
       return Result;
-   end Scalar_Value;
+   end Value;
 
-   function Sequence_Length (Node : Node_Ref) return Natural is
-      use C_Node_Item_Accesses;
+   function Length (Node : Node_Ref) return Natural is
+      use C_Node_Item_Accesses, C_Node_Pair_Accesses;
       Data : C_Node_Data renames Node.Node.Data;
    begin
-      return Natural
-        (Data.Sequence.Items.Seq_Top - Data.Sequence.Items.Seq_Start);
-   end Sequence_Length;
+      return
+        (case Kind (Node) is
+         when Sequence_Node => Natural
+           (Data.Sequence.Items.Seq_Top - Data.Sequence.Items.Seq_Start),
+         when Mapping_Node  => Natural
+           (Data.Mapping.Pairs.Map_Top - Data.Mapping.Pairs.Map_Start),
+         when others => raise Program_Error);
+   end Length;
 
-   function Sequence_Item (Node : Node_Ref; Index : Positive) return Node_Ref
+   function Item (Node : Node_Ref; Index : Positive) return Node_Ref
    is
       use C_Node_Item_Accesses;
       Data : C_Node_Data renames Node.Node.Data;
@@ -185,17 +190,9 @@ package body YAML is
          Data.Sequence.Items.Seq_Start + C_Ptr_Diff (Index - 1);
    begin
       return Get_Node (Node.Document.all, Item.all);
-   end Sequence_Item;
+   end Item;
 
-   function Mapping_Length (Node : Node_Ref) return Natural is
-      use C_Node_Pair_Accesses;
-      Data : C_Node_Data renames Node.Node.Data;
-   begin
-      return Natural
-        (Data.Mapping.Pairs.Map_Top - Data.Mapping.Pairs.Map_Start);
-   end Mapping_Length;
-
-   function Mapping_Item (Node : Node_Ref; Index : Positive) return Node_Pair
+   function Item (Node : Node_Ref; Index : Positive) return Node_Pair
    is
       use C_Node_Pair_Accesses;
       Data : C_Node_Data renames Node.Node.Data;
@@ -204,24 +201,24 @@ package body YAML is
    begin
       return (Key   => Get_Node (Node.Document.all, Pair.Key),
               Value => Get_Node (Node.Document.all, Pair.Value));
-   end Mapping_Item;
+   end Item;
 
-   function Mapping_Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
+   function Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
    is
    begin
-      for I in 1 .. Mapping_Length (Node) loop
+      for I in 1 .. Length (Node) loop
          declare
-            Pair : constant Node_Pair := Mapping_Item (Node, I);
+            Pair : constant Node_Pair := Item (Node, I);
          begin
             if Kind (Pair.Key) = Scalar_Node
-               and then Scalar_Value (Pair.Key) = Key
+               and then Value (Pair.Key) = Key
             then
                return Pair.Value;
             end if;
          end;
       end loop;
       return No_Node_Ref;
-   end Mapping_Item;
+   end Item;
 
    procedure Set_Input_String
      (Parser   : in out Parser_Type'Class;
