@@ -1,0 +1,8 @@
+with "../libyaml_ada";
+
+project Example is
+   for Main use ("example.adb");
+   for Object_Dir use "obj";
+
+   package Compiler renames LibYAML_Ada.Compiler;
+end Example;
