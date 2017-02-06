@@ -91,6 +91,19 @@ package YAML is
       Encoding : Encoding_Type);
    --  Set a string input. This maintains a copy of Input in Parser.
 
+   File_Error : exception;
+   --  Exception raised when file-related errors occurs. For instance: cannot
+   --  open a file, cannot read a file, etc.
+
+   procedure Set_Input_File
+     (Parser   : in out Parser_Type'Class;
+      Filename : String;
+      Encoding : Encoding_Type);
+   --  Set a file input. This opens Filename until the parser is destroyed or
+   --  until another Set_Input_* procedure is successfuly called. If an error
+   --  occurs while opening the file, raise a File_Error and leave the parser
+   --  unmodified.
+
    function Load (Parser : in out Parser_Type'Class) return Document_Type;
    --  Parse the input stream and produce the next YAML document.
    --
@@ -107,7 +120,7 @@ private
    subtype C_Ptr_Diff is Interfaces.C.ptrdiff_t;
 
    type C_Char_Array is array (C_Index) of Interfaces.Unsigned_8;
-   type C_Char_Access is access C_Char_Array;
+   type C_Char_Access is access all C_Char_Array;
 
    type C_Node_T;
    type C_Node_Access is access all C_Node_T;
@@ -328,11 +341,15 @@ private
    type C_Parser_Access is new System.Address;
    type String_Access is access String;
 
+   type C_File_Ptr is new System.Address;
+   No_File_Ptr : constant C_File_Ptr := C_File_Ptr (System.Null_Address);
+
    type Parser_Type is limited new Ada.Finalization.Limited_Controlled
    with record
       C_Parser       : C_Parser_Access;
       Input_Encoding : Encoding_Type;
       Input_String   : String_Access;
+      Input_File     : C_File_Ptr;
    end record;
 
    overriding procedure Initialize (Parser : in out Parser_Type);

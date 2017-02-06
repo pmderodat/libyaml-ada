@@ -1,6 +1,8 @@
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
 
+with Interfaces.C.Strings;
+
 package body YAML is
 
    use type C_Int;
@@ -47,11 +49,25 @@ package body YAML is
          Convention    => C,
          External_Name => "yaml_parser_set_input_string";
 
+   procedure C_Parser_Set_Input_File
+     (Parser : C_Parser_Access;
+      File   : C_File_Ptr)
+      with Import,
+           Convention    => C,
+           External_Name => "yaml_parser_set_input_file";
+
    procedure C_Parser_Delete (Parser : C_Parser_Access)
       with Import, Convention => C, External_Name => "yaml_parser_delete";
 
    procedure Deallocate_Parser (Parser : C_Parser_Access)
       with Import, Convention => C, External_Name => "yaml__deallocate_parser";
+
+   function C_Fopen
+     (Path, Mode : Interfaces.C.Strings.chars_ptr) return C_File_Ptr
+      with Import, Convention => C, External_Name => "fopen";
+
+   function C_Fclose (Stream : C_File_Ptr) return C_Int
+      with Import, Convention => C, External_Name => "fclose";
 
    -------------
    -- Helpers --
@@ -114,6 +130,7 @@ package body YAML is
 
       Parser.Input_Encoding := Any_Encoding;
       Parser.Input_String := null;
+      Parser.Input_File := No_File_Ptr;
    end Initialize;
 
    overriding procedure Finalize (Parser : in out Parser_Type) is
@@ -121,6 +138,11 @@ package body YAML is
       C_Parser_Delete (Parser.C_Parser);
       Deallocate_Parser (Parser.C_Parser);
       Deallocate (Parser.Input_String);
+      if Parser.Input_File /= No_File_Ptr
+         and then C_Fclose (Parser.Input_File) /= 0
+      then
+         raise File_Error;
+      end if;
    end Finalize;
 
    -----------------------
@@ -198,6 +220,30 @@ package body YAML is
          Convert (Parser.Input_String),
          Parser.Input_String'Length);
    end Set_Input_String;
+
+   procedure Set_Input_File
+     (Parser   : in out Parser_Type'Class;
+      Filename : String;
+      Encoding : Encoding_Type)
+   is
+      use Interfaces.C.Strings;
+
+      C_Mode     : chars_ptr := New_String ("r");
+      C_Filename : chars_ptr := New_String (Filename);
+      File       : constant C_File_Ptr := C_Fopen (C_Filename, C_Mode);
+   begin
+      Free (C_Mode);
+      Free (C_Filename);
+
+      if File = No_File_Ptr then
+         raise File_Error;
+      end if;
+
+      Deallocate (Parser.Input_String);
+      Parser.Input_Encoding := Encoding;
+      Parser.Input_File := File;
+      C_Parser_Set_Input_File (Parser.C_Parser, Parser.Input_File);
+   end Set_Input_File;
 
    function Load (Parser : in out Parser_Type'Class) return Document_Type is
    begin
