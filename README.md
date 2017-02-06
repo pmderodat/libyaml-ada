@@ -29,8 +29,8 @@ Why not writing a pure Ada library?
 -----------------------------------
 
 Writing a correct and comprehensive parser seems to be a huge task. Binding an
-existing libraary looked easy enough: I managed to write a basic binding in
-approximately one dayy. Feel free to start your own library.
+existing library looked easy enough: I managed to write a basic binding in
+approximately one day. Feel free to start your own library.
 
 
 What about the license?
