@@ -33,13 +33,6 @@ existing library looked easy enough: I managed to write a basic binding in
 approximately one day. Feel free to start your own library.
 
 
-What about the license?
------------------------
-
-I'm not a lawyer, so I need to figure out what constraints I have given the
-dependency on LibYAML.
-
-
 TODO
 ----
 
