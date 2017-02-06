@@ -116,6 +116,14 @@ package body YAML is
       return Node.Node.Kind;
    end Kind;
 
+   function Scalar_Value (Node : Node_Ref) return UTF8_String is
+      Data   : C_Node_Data renames Node.Node.Data;
+      Result : UTF8_String (1 .. Natural (Data.Scalar.Length))
+         with Address => Data.Scalar.Value.all'Address;
+   begin
+      return Result;
+   end Scalar_Value;
+
    procedure Set_Input_String
      (Parser   : in out Parser_Type'Class;
       Input    : String;

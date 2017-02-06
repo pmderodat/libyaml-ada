@@ -7,6 +7,8 @@ private with System;
 
 package YAML is
 
+   type UTF8_String is new String;
+
    type Document_Type is tagged limited private;
    --  Holder for a YAML document
 
@@ -37,6 +39,9 @@ package YAML is
 
    function Kind (Node : Node_Ref) return Node_Kind;
    --  Return the type of a node
+
+   function Scalar_Value (Node : Node_Ref) return UTF8_String
+      with Pre => Kind (Node) = Scalar_Node;
 
    type Parser_Type is tagged limited private;
    --  YAML document parser
