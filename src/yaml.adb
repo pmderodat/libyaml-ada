@@ -165,6 +165,25 @@ package body YAML is
       return Get_Node (Node.Document.all, Item.all);
    end Sequence_Item;
 
+   function Mapping_Length (Node : Node_Ref) return Natural is
+      use C_Node_Pair_Accesses;
+      Data : C_Node_Data renames Node.Node.Data;
+   begin
+      return Natural
+        (Data.Mapping.Pairs.Map_Top - Data.Mapping.Pairs.Map_Start);
+   end Mapping_Length;
+
+   function Mapping_Item (Node : Node_Ref; Index : Positive) return Node_Pair
+   is
+      use C_Node_Pair_Accesses;
+      Data : C_Node_Data renames Node.Node.Data;
+      Pair : constant C_Node_Pair_Access :=
+         Data.Mapping.Pairs.Map_Start + C_Ptr_Diff (Index - 1);
+   begin
+      return (Key   => Get_Node (Node.Document.all, Pair.Key),
+              Value => Get_Node (Node.Document.all, Pair.Value));
+   end Mapping_Item;
+
    procedure Set_Input_String
      (Parser   : in out Parser_Type'Class;
       Input    : String;

@@ -52,6 +52,19 @@ package YAML is
       with Pre => Kind (Node) = Sequence_Node;
    --  Return the Index'th item in Node. Index is 1-based.
 
+   type Node_Pair is record
+      Key, Value : Node_Ref;
+   end record;
+   --  Key/value asssociation in a mapping node
+
+   function Mapping_Length (Node : Node_Ref) return Natural
+      with Pre => Kind (Node) = Mapping_Node;
+   --  Return the number of key/value associations in the Node mapping
+
+   function Mapping_Item (Node : Node_Ref; Index : Positive) return Node_Pair
+      with Pre => Kind (Node) = Mapping_Node;
+   --  Return the Index'th key/value association in Node. Index is 1-based.
+
    type Parser_Type is tagged limited private;
    --  YAML document parser
 
@@ -162,7 +175,13 @@ private
       Key, Value : C_Int;
    end record with
       Convention => C_Pass_By_Copy;
-   type C_Node_Pair_Access is access all C_Node_Pair_T;
+   type C_Node_Pair_Array is array (C_Index range <>) of aliased C_Node_Pair_T;
+   package C_Node_Pair_Accesses is new Interfaces.C.Pointers
+     (Index              => C_Index,
+      Element            => C_Node_Pair_T,
+      Element_Array      => C_Node_Pair_Array,
+      Default_Terminator => (-1, -1));
+   subtype C_Node_Pair_Access is C_Node_Pair_Accesses.Pointer;
 
    ----------------------------
    -- Node structure binding --
