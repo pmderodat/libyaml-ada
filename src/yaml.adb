@@ -9,6 +9,8 @@ package body YAML is
 
    procedure Deallocate is new Ada.Unchecked_Deallocation
      (String, String_Access);
+   procedure Deallocate is new Ada.Unchecked_Deallocation
+     (Document_Type, Document_Access);
 
    ----------------------
    -- C symbol imports --
@@ -109,6 +111,7 @@ package body YAML is
 
    overriding procedure Initialize (Document : in out Document_Type) is
    begin
+      Document.Ref_Count := 0;
       Document.To_Delete := False;
    end Initialize;
 
@@ -119,6 +122,37 @@ package body YAML is
          Document.To_Delete := False;
       end if;
    end Finalize;
+
+   overriding procedure Adjust (Handle : in out Document_Handle) is
+   begin
+      Handle.Inc_Ref;
+   end Adjust;
+
+   overriding procedure Finalize (Handle : in out Document_Handle) is
+   begin
+      Handle.Dec_Ref;
+   end Finalize;
+
+   procedure Inc_Ref (Handle : in out Document_Handle'Class) is
+   begin
+      if Handle /= No_Document_Handle then
+         Handle.Document.Ref_Count := Handle.Document.Ref_Count + 1;
+      end if;
+   end Inc_Ref;
+
+   procedure Dec_Ref (Handle : in out Document_Handle'Class) is
+   begin
+      if Handle /= No_Document_Handle then
+         declare
+            D : Document_Access := Handle.Document;
+         begin
+            D.Ref_Count := D.Ref_Count - 1;
+            if D.Ref_Count = 0 then
+               Deallocate (D);
+            end if;
+         end;
+      end if;
+   end Dec_Ref;
 
    overriding procedure Initialize (Parser : in out Parser_Type) is
    begin
@@ -148,6 +182,13 @@ package body YAML is
    -----------------------
    --  Public interface --
    -----------------------
+
+   function Create return Document_Handle is
+      D : constant Document_Access := new Document_Type;
+   begin
+      D.Ref_Count := 1;
+      return (Ada.Finalization.Controlled with Document => D);
+   end Create;
 
    function Root_Node (Document : Document_Type'Class) return Node_Ref is
    begin

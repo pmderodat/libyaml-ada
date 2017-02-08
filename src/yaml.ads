@@ -13,6 +13,21 @@ package YAML is
    type Document_Type is tagged limited private;
    --  Holder for a YAML document
 
+   type Document_Handle (Document : access Document_Type) is
+      tagged private
+      with Implicit_Dereference => Document;
+   --  Reference-counting reference to a dynamically allocated document. Create
+   --  such references to new Documents using the Create function below.
+
+   function "=" (Left, Right : Document_Handle'Class) return Boolean is
+     (Left.Document = Right.Document);
+
+   No_Document_Handle : constant Document_Handle;
+   --  Special value to mean: no reference. Think of it as a null access.
+
+   function Create return Document_Handle;
+   --  Create a dynamically allocated document and return a handle to it
+
    type Node_Kind is
      (No_Node,
       --  An empty node
@@ -328,6 +343,10 @@ private
       --   Inlined C document structure. This is the reason Document_Type is
       --   limited.
 
+      Ref_Count : Natural;
+      --  Reference counter for Document_Handle. The document must be deleted
+      --  when the count drops to 0.
+
       To_Delete : Boolean;
       --  Whether C_Doc has been initialized. In this case, it must be deleted
       --  during finalization.
@@ -336,7 +355,19 @@ private
    overriding procedure Initialize (Document : in out Document_Type);
    overriding procedure Finalize (Document : in out Document_Type);
 
-   type Document_Access is access all Document_Type'Class;
+   type Document_Access is access all Document_Type;
+
+   type Document_Handle (Document : access Document_Type) is new
+      Ada.Finalization.Controlled with null record;
+
+   overriding procedure Adjust (Handle : in out Document_Handle);
+   overriding procedure Finalize (Handle : in out Document_Handle);
+
+   procedure Inc_Ref (Handle : in out Document_Handle'Class);
+   procedure Dec_Ref (Handle : in out Document_Handle'Class);
+
+   No_Document_Handle : constant Document_Handle :=
+     (Ada.Finalization.Controlled with Document => null);
 
    type Node_Ref is tagged record
       Node     : C_Node_Access;

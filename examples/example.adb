@@ -21,11 +21,11 @@ procedure Example is
 
    procedure Process_File (Filename : String) is
       P : YAML.Parser_Type;
-      D : YAML.Document_Type;
+      D : constant YAML.Document_Handle := YAML.Create;
    begin
       P.Set_Input_File (Filename, YAML.UTF8_Encoding);
-      P.Load (D);
-      Process (D);
+      P.Load (D.Document.all);
+      Process (D.Document.all);
    end Process_File;
 
    procedure Process (D : YAML.Document_Type) is
