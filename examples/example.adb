@@ -39,19 +39,19 @@ procedure Example is
             Put_Line (Prefix & "<null>");
 
          when YAML.Scalar_Node =>
-            Put_Line (Prefix & String (YAML.Value (N)));
+            Put_Line (Prefix & String (N.Value));
 
          when YAML.Sequence_Node =>
-            for I in 1 .. YAML.Length (N) loop
+            for I in 1 .. N.Length loop
                Put_Line (Prefix & "- ");
-               Put (YAML.Item (N, I), Indent + 2);
+               Put (N.Item (I), Indent + 2);
             end loop;
 
          when YAML.Mapping_Node =>
             Put_Line ("Pairs:");
-            for I in 1 .. YAML.Length (N) loop
+            for I in 1 .. N.Length loop
                declare
-                  Pair : constant YAML.Node_Pair := YAML.Item (N, I);
+                  Pair : constant YAML.Node_Pair := N.Item (I);
                begin
                   Put (Prefix & "Key:");
                   Put (Pair.Key, Indent + 2);

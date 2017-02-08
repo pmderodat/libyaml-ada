@@ -29,7 +29,7 @@ package YAML is
       Convention => C;
    --  Type of a node in a document
 
-   type Node_Ref is private;
+   type Node_Ref is tagged private;
    --  Reference to a node as part of a document. Such values must not outlive
    --  the value for the document that owns them.
 
@@ -331,7 +331,7 @@ private
 
    type Document_Access is access all Document_Type'Class;
 
-   type Node_Ref is record
+   type Node_Ref is tagged record
       Node     : C_Node_Access;
       --  The referenced node
 
