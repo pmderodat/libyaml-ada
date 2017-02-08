@@ -323,7 +323,12 @@ private
    type Document_Type is limited new Ada.Finalization.Limited_Controlled
    with record
       C_Doc     : aliased C_Document_T;
+      --   Inlined C document structure. This is the reason Document_Type is
+      --   limited.
+
       To_Delete : Boolean;
+      --  Whether C_Doc has been initialized. In this case, it must be deleted
+      --  during finalization.
    end record;
 
    overriding procedure Initialize (Document : in out Document_Type);
