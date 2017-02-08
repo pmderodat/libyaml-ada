@@ -12,16 +12,20 @@ procedure Example is
 
    procedure Process_String (S : String) is
       P : YAML.Parser_Type;
+      D : YAML.Document_Type;
    begin
       P.Set_Input_String (S, YAML.UTF8_Encoding);
-      Process (P.Load);
+      P.Load (D);
+      Process (D);
    end Process_String;
 
    procedure Process_File (Filename : String) is
       P : YAML.Parser_Type;
+      D : YAML.Document_Type;
    begin
       P.Set_Input_File (Filename, YAML.UTF8_Encoding);
-      Process (P.Load);
+      P.Load (D);
+      Process (D);
    end Process_File;
 
    procedure Process (D : YAML.Document_Type) is

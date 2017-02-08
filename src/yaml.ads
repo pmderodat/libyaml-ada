@@ -107,7 +107,9 @@ package YAML is
    --  occurs while opening the file, raise a File_Error and leave the parser
    --  unmodified.
 
-   function Load (Parser : in out Parser_Type'Class) return Document_Type;
+   procedure Load
+     (Parser   : in out Parser_Type'Class;
+      Document : in out Document_Type'Class);
    --  Parse the input stream and produce the next YAML document.
    --
    --  Call this function subsequently to produce a sequence of documents

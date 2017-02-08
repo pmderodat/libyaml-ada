@@ -259,17 +259,18 @@ package body YAML is
       C_Parser_Set_Input_File (Parser.C_Parser, Parser.Input_File);
    end Set_Input_File;
 
-   function Load (Parser : in out Parser_Type'Class) return Document_Type is
+   procedure Load
+     (Parser   : in out Parser_Type'Class;
+      Document : in out Document_Type'Class) is
    begin
-      return Document : Document_Type do
-         if C_Parser_Load
-           (Parser.C_Parser, Document.C_Doc'Unrestricted_Access) /= 1
-         then
-            --  TODO: determine a good error handling scheme
-            raise Program_Error;
-         end if;
-         Document.To_Delete := True;
-      end return;
+      Document.Finalize;
+      if C_Parser_Load
+        (Parser.C_Parser, Document.C_Doc'Unrestricted_Access) /= 1
+      then
+         --  TODO: determine a good error handling scheme
+         raise Program_Error;
+      end if;
+      Document.To_Delete := True;
    end Load;
 
 end YAML;
