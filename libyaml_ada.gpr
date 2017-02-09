@@ -1,8 +1,11 @@
 project LibYAML_Ada is
 
+   type Build_Mode_Type is ("debug", "prod");
+   Build_Mode : Build_Mode_Type := external("BUILD_MODE", "debug");
+
    for Languages use ("Ada", "C");
    for Source_Dirs use ("src");
-   for Object_Dir use "obj";
+   for Object_Dir use "obj-" & Build_Mode;
 
    --  For now, don't build this project as a library. Instead, let each user
    --  pull this into its build system.
@@ -10,9 +13,6 @@ project LibYAML_Ada is
    -----------------
    -- Build modes --
    -----------------
-
-   type Build_Mode_Type is ("debug", "prod");
-   Build_Mode : Build_Mode_Type := external("BUILD_MODE", "debug");
 
    Common_Cargs := ();
    Ada_Cargs := ();
