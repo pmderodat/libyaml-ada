@@ -65,23 +65,23 @@ package YAML is
    function End_Mark (Document : Document_Type'Class) return Mark_Type;
    --  Return Document's ending position
 
-   function Kind (Node : Node_Ref) return Node_Kind;
+   function Kind (Node : Node_Ref'Class) return Node_Kind;
    --  Return the type of a node
 
-   function Start_Mark (Node : Node_Ref) return Mark_Type;
+   function Start_Mark (Node : Node_Ref'Class) return Mark_Type;
    --  Return Node's starting position
 
-   function End_Mark (Node : Node_Ref) return Mark_Type;
+   function End_Mark (Node : Node_Ref'Class) return Mark_Type;
    --  Return Node's ending position
 
-   function Value (Node : Node_Ref) return UTF8_String
+   function Value (Node : Node_Ref'Class) return UTF8_String
       with Pre => Kind (Node) = Scalar_Node;
 
-   function Length (Node : Node_Ref) return Natural
+   function Length (Node : Node_Ref'Class) return Natural
       with Pre => Kind (Node) in Sequence_Node | Mapping_Node;
    --  Return the number of items in the Node sequence/mapping
 
-   function Item (Node : Node_Ref; Index : Positive) return Node_Ref
+   function Item (Node : Node_Ref'Class; Index : Positive) return Node_Ref
       with Pre => Kind (Node) = Sequence_Node
                   and then Index <= Length (Node);
    --  Return the Index'th item in Node. Index is 1-based.
@@ -91,12 +91,12 @@ package YAML is
    end record;
    --  Key/value asssociation in a mapping node
 
-   function Item (Node : Node_Ref; Index : Positive) return Node_Pair
+   function Item (Node : Node_Ref'Class; Index : Positive) return Node_Pair
       with Pre => Kind (Node) = Mapping_Node
                   and then Index <= Length (Node);
    --  Return the Index'th key/value association in Node. Index is 1-based.
 
-   function Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
+   function Item (Node : Node_Ref'Class; Key : UTF8_String) return Node_Ref
       with Pre => Kind (Node) = Mapping_Node;
    --  Look for Key in the Node mapping. If there is one, return the
    --  corresponding Value. Return No_Node_Ref otherwise.

@@ -236,22 +236,22 @@ package body YAML is
       return Wrap (Document.C_Doc.End_Mark);
    end End_Mark;
 
-   function Kind (Node : Node_Ref) return Node_Kind is
+   function Kind (Node : Node_Ref'Class) return Node_Kind is
    begin
       return Node.Node.Kind;
    end Kind;
 
-   function Start_Mark (Node : Node_Ref) return Mark_Type is
+   function Start_Mark (Node : Node_Ref'Class) return Mark_Type is
    begin
       return Wrap (Node.Node.Start_Mark);
    end Start_Mark;
 
-   function End_Mark (Node : Node_Ref) return Mark_Type is
+   function End_Mark (Node : Node_Ref'Class) return Mark_Type is
    begin
       return Wrap (Node.Node.End_Mark);
    end End_Mark;
 
-   function Value (Node : Node_Ref) return UTF8_String is
+   function Value (Node : Node_Ref'Class) return UTF8_String is
       Data   : C_Node_Data renames Node.Node.Data;
       Result : UTF8_String (1 .. Natural (Data.Scalar.Length))
          with Address => Data.Scalar.Value.all'Address;
@@ -259,7 +259,7 @@ package body YAML is
       return Result;
    end Value;
 
-   function Length (Node : Node_Ref) return Natural is
+   function Length (Node : Node_Ref'Class) return Natural is
       use C_Node_Item_Accesses, C_Node_Pair_Accesses;
       Data : C_Node_Data renames Node.Node.Data;
    begin
@@ -272,7 +272,7 @@ package body YAML is
          when others => raise Program_Error);
    end Length;
 
-   function Item (Node : Node_Ref; Index : Positive) return Node_Ref
+   function Item (Node : Node_Ref'Class; Index : Positive) return Node_Ref
    is
       use C_Node_Item_Accesses;
       Data : C_Node_Data renames Node.Node.Data;
@@ -282,7 +282,7 @@ package body YAML is
       return Get_Node (Node.Document.all, Item.all);
    end Item;
 
-   function Item (Node : Node_Ref; Index : Positive) return Node_Pair
+   function Item (Node : Node_Ref'Class; Index : Positive) return Node_Pair
    is
       use C_Node_Pair_Accesses;
       Data : C_Node_Data renames Node.Node.Data;
@@ -293,7 +293,7 @@ package body YAML is
               Value => Get_Node (Node.Document.all, Pair.Value));
    end Item;
 
-   function Item (Node : Node_Ref; Key : UTF8_String) return Node_Ref
+   function Item (Node : Node_Ref'Class; Key : UTF8_String) return Node_Ref
    is
    begin
       for I in 1 .. Length (Node) loop
