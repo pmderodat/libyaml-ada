@@ -56,11 +56,6 @@ appear on the standard output and will thus make the output comparison fail.
 TODO
 ----
 
-*   Decent handling for parsing errors: right now, users just get a rude
-    `Program_Error`.
-
-*   Expose marks (source locations) in nodes.
-
 *   Document construction.
 
 *   Document emission (YAML document dump to a text file).
