@@ -127,6 +127,9 @@ package YAML is
    --  occurs while opening the file, raise a File_Error and leave the parser
    --  unmodified.
 
+   procedure Discard_Input (Parser : in out Parser_Type'Class);
+   --  If Parser was assigned an input, discard it
+
    procedure Load
      (Parser   : in out Parser_Type'Class;
       Document : in out Document_Type'Class)

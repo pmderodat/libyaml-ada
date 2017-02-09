@@ -77,10 +77,20 @@ package body YAML is
 
    function Convert (S : String_Access) return C_Char_Access;
 
+   procedure Discard_Input
+     (Parser        : in out Parser_Type'Class;
+      Re_Initialize : Boolean);
+   --  Free input holders in parser and delete the C YAML parser. If
+   --  Re_Initialize, also call Initialize_After_Allocation.
+
    function Get_Node
      (Document : Document_Type'Class; Index : C_Int) return Node_Ref;
    --  Wrapper around C_Document_Get_Node. Raise a Constraint_Error if Index is
    --  out of range.
+
+   procedure Initialize_After_Allocation (Parser : in out Parser_Type'Class);
+   --  Initialize the C YAML parser and assign proper defaults to input holders
+   --  in Parser.
 
    function Wrap
      (Document : Document_Type'Class; N : C_Node_Access) return Node_Ref
@@ -104,6 +114,35 @@ package body YAML is
       end if;
       return Wrap (Document, N);
    end Get_Node;
+
+   procedure Initialize_After_Allocation (Parser : in out Parser_Type'Class) is
+   begin
+      if C_Parser_Initialize (Parser.C_Parser) /= 1 then
+         --  TODO: determine a good error handling scheme
+         raise Program_Error;
+      end if;
+
+      Parser.Input_Encoding := Any_Encoding;
+      Parser.Input_String := null;
+      Parser.Input_File := No_File_Ptr;
+   end Initialize_After_Allocation;
+
+   procedure Discard_Input
+     (Parser        : in out Parser_Type'Class;
+      Re_Initialize : Boolean) is
+   begin
+      C_Parser_Delete (Parser.C_Parser);
+      Deallocate (Parser.Input_String);
+      if Parser.Input_File /= No_File_Ptr
+         and then C_Fclose (Parser.Input_File) /= 0
+      then
+         raise File_Error;
+      end if;
+
+      if Re_Initialize then
+         Initialize_After_Allocation (Parser);
+      end if;
+   end Discard_Input;
 
    ----------
    -- Misc --
@@ -157,26 +196,13 @@ package body YAML is
    overriding procedure Initialize (Parser : in out Parser_Type) is
    begin
       Parser.C_Parser := Allocate_Parser;
-      if C_Parser_Initialize (Parser.C_Parser) /= 1 then
-         --  TODO: determine a good error handling scheme
-         raise Program_Error;
-      end if;
-
-      Parser.Input_Encoding := Any_Encoding;
-      Parser.Input_String := null;
-      Parser.Input_File := No_File_Ptr;
+      Initialize_After_Allocation (Parser);
    end Initialize;
 
    overriding procedure Finalize (Parser : in out Parser_Type) is
    begin
-      C_Parser_Delete (Parser.C_Parser);
+      Discard_Input (Parser, False);
       Deallocate_Parser (Parser.C_Parser);
-      Deallocate (Parser.Input_String);
-      if Parser.Input_File /= No_File_Ptr
-         and then C_Fclose (Parser.Input_File) /= 0
-      then
-         raise File_Error;
-      end if;
    end Finalize;
 
    -----------------------
@@ -304,6 +330,11 @@ package body YAML is
       Parser.Input_File := File;
       C_Parser_Set_Input_File (Parser.C_Parser, Parser.Input_File);
    end Set_Input_File;
+
+   procedure Discard_Input (Parser : in out Parser_Type'Class) is
+   begin
+      Discard_Input (Parser, True);
+   end Discard_Input;
 
    procedure Load
      (Parser   : in out Parser_Type'Class;
