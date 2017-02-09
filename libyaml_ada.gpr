@@ -11,15 +11,15 @@ project LibYAML_Ada is
    -- Build modes --
    -----------------
 
-   type Build_Mode_Type is ("dev", "prod");
-   Build_Mode : Build_Mode_Type := external("BUILD_MODE", "dev");
+   type Build_Mode_Type is ("debug", "prod");
+   Build_Mode : Build_Mode_Type := external("BUILD_MODE", "debug");
 
    Common_Cargs := ();
    Ada_Cargs := ();
    C_Cargs := ();
 
    case Build_Mode is
-      when "dev"  =>
+      when "debug"  =>
          Common_Cargs := Common_Cargs & ("-g3", "-O0");
          Ada_Cargs := Ada_Cargs & ("-gnata", "-gnatwae", "-gnatyg");
 
