@@ -44,6 +44,11 @@ package YAML is
       Convention => C;
    --  Type of a node in a document
 
+   type Mark_Type is record
+      Line, Column : Positive;
+   end record;
+   --  Position in a YAML file
+
    type Node_Ref is tagged private;
    --  Reference to a node as part of a document. Such values must not outlive
    --  the value for the document that owns them.
@@ -56,6 +61,12 @@ package YAML is
 
    function Kind (Node : Node_Ref) return Node_Kind;
    --  Return the type of a node
+
+   function Start_Mark (Node : Node_Ref) return Mark_Type;
+   --  Return Node's starting position
+
+   function End_Mark (Node : Node_Ref) return Mark_Type;
+   --  Return Node's ending position
 
    function Value (Node : Node_Ref) return UTF8_String
       with Pre => Kind (Node) = Scalar_Node;

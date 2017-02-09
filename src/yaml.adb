@@ -97,6 +97,9 @@ package body YAML is
    is
      ((Node => N, Document => Document'Unrestricted_Access));
 
+   function Wrap (M : C_Mark_T) return Mark_Type is
+     ((Line => Natural (M.Line) + 1, Column => Natural (M.Column) + 1));
+
    function Convert (S : String_Access) return C_Char_Access is
       Char_Array : C_Char_Array with Address => S.all'Address;
    begin
@@ -227,6 +230,16 @@ package body YAML is
    begin
       return Node.Node.Kind;
    end Kind;
+
+   function Start_Mark (Node : Node_Ref) return Mark_Type is
+   begin
+      return Wrap (Node.Node.Start_Mark);
+   end Start_Mark;
+
+   function End_Mark (Node : Node_Ref) return Mark_Type is
+   begin
+      return Wrap (Node.Node.End_Mark);
+   end End_Mark;
 
    function Value (Node : Node_Ref) return UTF8_String is
       Data   : C_Node_Data renames Node.Node.Data;
