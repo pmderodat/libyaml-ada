@@ -1,37 +1,33 @@
-with Ada.Command_Line; use Ada.Command_Line;
-with Ada.Text_IO;      use Ada.Text_IO;
+with Ada.Text_IO; use Ada.Text_IO;
 
 with YAML;
 
-procedure Example is
+procedure Parser is
 
    procedure Process_String (S : String);
    procedure Process_File (Filename : String);
-   procedure Process (D : YAML.Document_Type);
+   procedure Process (P : in out YAML.Parser_Type);
    procedure Put (N : YAML.Node_Ref; Indent : Natural);
 
    procedure Process_String (S : String) is
       P : YAML.Parser_Type;
-      D : YAML.Document_Type;
    begin
       P.Set_Input_String (S, YAML.UTF8_Encoding);
-      P.Load (D);
-      Process (D);
+      Process (P);
    end Process_String;
 
    procedure Process_File (Filename : String) is
       P : YAML.Parser_Type;
-      D : constant YAML.Document_Handle := YAML.Create;
    begin
       P.Set_Input_File (Filename, YAML.UTF8_Encoding);
-      P.Load (D.Document.all);
-      Process (D.Document.all);
+      Process (P);
    end Process_File;
 
-   procedure Process (D : YAML.Document_Type) is
-      N : constant YAML.Node_Ref := D.Root_Node;
+   procedure Process (P : in out YAML.Parser_Type) is
+      D : YAML.Document_Type;
    begin
-      Put (N, 0);
+      P.Load (D);
+      Put (D.Root_Node, 0);
       New_Line;
    end Process;
 
@@ -67,13 +63,9 @@ procedure Example is
    end Put;
 
 begin
-   if Argument_Count = 0 then
-      Process_String ("1");
-      Process_String ("[1, 2, 3, a, null]");
-      Process_String ("foo: 1");
-   else
-      for I in 1 .. Argument_Count loop
-         Process_File (Argument (I));
-      end loop;
-   end if;
-end Example;
+   Process_String ("1");
+   Process_String ("[1, 2, 3, a, null]");
+   Process_String ("foo: 1");
+
+   Process_File ("parser-valid.yaml");
+end Parser;
