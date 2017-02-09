@@ -59,6 +59,12 @@ package YAML is
    --  Return the root node of a document, or No_Node_Ref for an empty
    --  document.
 
+   function Start_Mark (Document : Document_Type'Class) return Mark_Type;
+   --  Return Document's starting position
+
+   function End_Mark (Document : Document_Type'Class) return Mark_Type;
+   --  Return Document's ending position
+
    function Kind (Node : Node_Ref) return Node_Kind;
    --  Return the type of a node
 

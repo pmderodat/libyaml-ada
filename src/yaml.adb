@@ -226,6 +226,16 @@ package body YAML is
          C_Document_Get_Root_Node (Document.C_Doc'Unrestricted_Access));
    end Root_Node;
 
+   function Start_Mark (Document : Document_Type'Class) return Mark_Type is
+   begin
+      return Wrap (Document.C_Doc.Start_Mark);
+   end Start_Mark;
+
+   function End_Mark (Document : Document_Type'Class) return Mark_Type is
+   begin
+      return Wrap (Document.C_Doc.End_Mark);
+   end End_Mark;
+
    function Kind (Node : Node_Ref) return Node_Kind is
    begin
       return Node.Node.Kind;
