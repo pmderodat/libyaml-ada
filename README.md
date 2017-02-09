@@ -33,6 +33,26 @@ existing library looked easy enough: I managed to write a basic binding in
 approximately one day. Feel free to start your own library.
 
 
+Running the testsuite
+---------------------
+
+From the top-level directory, run:
+
+```
+$ ./runtests.py
+```
+
+This will run all tests in the `tests` sub-directory and print their status on
+the standard output.  Each Ada source file (`*.adb`) in this directory is
+considered to be a main.  They are all compiled as a single project, then each
+is run and its output is checked against the corresponding `.out` text file. If
+both match, the test passes, otherwise it fails.
+
+Using Valgrind's memcheck tool, it is possible to check for memory leaks in
+testcases: just add the `--valgrind` argument to the above command. Errors will
+appear on the standard output and will thus make the output comparison fail.
+
+
 TODO
 ----
 
