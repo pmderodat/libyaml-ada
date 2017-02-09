@@ -4,8 +4,24 @@ with YAML;
 
 procedure Parser is
 
+   function LStrip (S : String) return String;
+   function Image (M : YAML.Mark_Type) return String;
+
    procedure Process (P : in out YAML.Parser_Type);
    procedure Put (N : YAML.Node_Ref; Indent : Natural);
+
+   function LStrip (S : String) return String is
+   begin
+      return (if S (S'First) = ' '
+              then S (S'First + 1 .. S'Last)
+              else S);
+   end LStrip;
+
+   function Image (M : YAML.Mark_Type) return String is
+   begin
+      return LStrip (Natural'Image (M.Line))
+             & ':' & LStrip (Natural'Image (M.Column));
+   end Image;
 
    procedure Process (P : in out YAML.Parser_Type) is
       D : YAML.Document_Type;
@@ -19,21 +35,25 @@ procedure Parser is
    procedure Put (N : YAML.Node_Ref; Indent : Natural) is
       Prefix : constant String := (1 .. Indent => ' ');
    begin
+      Put (Prefix
+           & '[' & Image (N.Start_Mark) & '-' & Image (N.End_Mark) & "]");
       case YAML.Kind (N) is
          when YAML.No_Node =>
-            Put_Line (Prefix & "<null>");
+            Put_Line (" <null>");
 
          when YAML.Scalar_Node =>
-            Put_Line (Prefix & String (N.Value));
+            Put_Line (' ' & String (N.Value));
 
          when YAML.Sequence_Node =>
             for I in 1 .. N.Length loop
+               New_Line;
                Put_Line (Prefix & "- ");
                Put (N.Item (I), Indent + 2);
             end loop;
 
          when YAML.Mapping_Node =>
-            Put_Line ("Pairs:");
+            New_Line;
+            Put_Line (Prefix & "Pairs:");
             for I in 1 .. N.Length loop
                declare
                   Pair : constant YAML.Node_Pair := N.Item (I);
