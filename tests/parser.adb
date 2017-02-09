@@ -4,30 +4,15 @@ with YAML;
 
 procedure Parser is
 
-   procedure Process_String (S : String);
-   procedure Process_File (Filename : String);
    procedure Process (P : in out YAML.Parser_Type);
    procedure Put (N : YAML.Node_Ref; Indent : Natural);
-
-   procedure Process_String (S : String) is
-      P : YAML.Parser_Type;
-   begin
-      P.Set_Input_String (S, YAML.UTF8_Encoding);
-      Process (P);
-   end Process_String;
-
-   procedure Process_File (Filename : String) is
-      P : YAML.Parser_Type;
-   begin
-      P.Set_Input_File (Filename, YAML.UTF8_Encoding);
-      Process (P);
-   end Process_File;
 
    procedure Process (P : in out YAML.Parser_Type) is
       D : YAML.Document_Type;
    begin
       P.Load (D);
       Put (D.Root_Node, 0);
+      P.Discard_Input;
       New_Line;
    end Process;
 
@@ -62,10 +47,18 @@ procedure Parser is
       end case;
    end Put;
 
-begin
-   Process_String ("1");
-   Process_String ("[1, 2, 3, a, null]");
-   Process_String ("foo: 1");
+   P : YAML.Parser_Type;
 
-   Process_File ("parser-valid.yaml");
+begin
+   P.Set_Input_String ("1", YAML.UTF8_Encoding);
+   Process (P);
+
+   P.Set_Input_String ("[1, 2, 3, a, null]", YAML.UTF8_Encoding);
+   Process (P);
+
+   P.Set_Input_String ("foo: 1", YAML.UTF8_Encoding);
+   Process (P);
+
+   P.Set_Input_File ("parser-valid.yaml", YAML.UTF8_Encoding);
+   Process (P);
 end Parser;
