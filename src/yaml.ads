@@ -1,7 +1,9 @@
 private with Ada.Finalization;
+with Ada.Strings.Unbounded;
 
 private with Interfaces;
 private with Interfaces.C;
+private with Interfaces.C.Strings;
 private with Interfaces.C.Pointers;
 
 private with System;
@@ -101,6 +103,63 @@ package YAML is
    --  Look for Key in the Node mapping. If there is one, return the
    --  corresponding Value. Return No_Node_Ref otherwise.
 
+   type Error_Kind is
+     (No_Error,
+      --  No error is produced
+
+      Memory_Error,
+      --  Cannot allocate or reallocate a block of memory
+
+      Reader_Error,
+      --  Cannot read or decode the input stream
+      Scanner_Error,
+      --  Cannot scan the input stream
+      Parser_Error,
+      --  Cannot parse the input stream
+      Composer_Error,
+      --  Cannot compose a YAML document
+
+      Writer_Error,
+      --  Cannot write to the output stream
+      Emitter_Error
+      --  Cannot emit a YAML stream
+     ) with Convention => C;
+   --  Many bad things could happen with the parser and the emitter. Note: as
+   --  this Ada binding does not cover the emitter yet, some errors cannot
+   --  occur.
+
+   type Error_Type (Kind : Error_Kind := No_Error) is record
+
+      Problem : Ada.Strings.Unbounded.Unbounded_String;
+      --  Error description
+
+      case Kind is
+         when No_Error => null;
+         when Reader_Error =>
+            Problem_Offset : Natural;
+            --  The byte about which the problem occured
+
+            Problem_Value : Integer;
+            --  The problematic value (-1 is none)
+
+         when Scanner_Error | Parser_Error =>
+            Context      : Ada.Strings.Unbounded.Unbounded_String;
+            --  Error context
+
+            Context_Mark : Mark_Type;
+            --  Context position
+
+            Problem_Mark : Mark_Type;
+            --  Problem position
+
+         when Composer_Error => null;
+         when Memory_Error | Writer_Error | Emitter_Error => null;
+      end case;
+   end record;
+
+   function Image (Error : Error_Type) return String;
+   --  Return a human-readable representation of Error
+
    type Parser_Type is tagged limited private;
    --  YAML document parser
 
@@ -149,6 +208,7 @@ package YAML is
 
    procedure Load
      (Parser   : in out Parser_Type'Class;
+      Error    : out Error_Type;
       Document : in out Document_Type'Class)
       with Pre => Parser.Has_Input;
    --  Parse the input stream and produce the next YAML document.
@@ -157,12 +217,14 @@ package YAML is
    --  constituting the input stream. If the produced document has no root
    --  node, it means that the document end has been reached.
    --
-   --  TODO: error handling
+   --  If upon return Error.Kind is different than No_Error, Document must be
+   --  considered as garbage.
 
 private
 
    subtype C_Int is Interfaces.C.int;
    subtype C_Index is C_Int range 0 .. C_Int'Last;
+   subtype C_Size_T is Interfaces.C.size_t;
    subtype C_Ptr_Diff is Interfaces.C.ptrdiff_t;
 
    type C_Char_Array is array (C_Index) of Interfaces.Unsigned_8;
@@ -407,6 +469,19 @@ private
 
    type C_Parser_Access is new System.Address;
    type String_Access is access String;
+
+   type C_Parser_Error_View is record
+      Error          : Error_Kind;
+      Problem        : Interfaces.C.Strings.chars_ptr;
+      Problem_Offset : C_Size_T;
+      Problem_Value  : C_Int;
+      Problem_Mark   : C_Mark_T;
+      Context        : Interfaces.C.Strings.chars_ptr;
+      Context_Mark   : C_Mark_T;
+   end record with
+      Convention => C_Pass_By_Copy;
+   --  Partial view on the yaml_parser_s C structure. Used to access error
+   --  flags.
 
    type C_File_Ptr is new System.Address;
    No_File_Ptr : constant C_File_Ptr := C_File_Ptr (System.Null_Address);

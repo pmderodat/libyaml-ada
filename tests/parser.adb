@@ -1,6 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
 with YAML;
+use type YAML.Error_Kind;
 
 procedure Parser is
 
@@ -25,9 +26,14 @@ procedure Parser is
 
    procedure Process (P : in out YAML.Parser_Type) is
       D : YAML.Document_Type;
+      E : YAML.Error_Type;
    begin
-      P.Load (D);
-      Put (D.Root_Node, 0);
+      P.Load (E, D);
+      if E.Kind /= YAML.No_Error then
+         Put_Line (YAML.Image (E));
+      else
+         Put (D.Root_Node, 0);
+      end if;
       P.Discard_Input;
       New_Line;
    end Process;
@@ -80,5 +86,17 @@ begin
    Process (P);
 
    P.Set_Input_File ("parser-valid.yaml", YAML.UTF8_Encoding);
+   Process (P);
+
+   P.Set_Input_File ("parser-scanner-error-0.yaml", YAML.UTF8_Encoding);
+   Process (P);
+
+   P.Set_Input_File ("parser-scanner-error-1.yaml", YAML.UTF8_Encoding);
+   Process (P);
+
+   P.Set_Input_File ("parser-parser-error-0.yaml", YAML.UTF8_Encoding);
+   Process (P);
+
+   P.Set_Input_File ("parser-parser-error-1.yaml", YAML.UTF8_Encoding);
    Process (P);
 end Parser;

@@ -1,8 +1,6 @@
 with Ada.Unchecked_Conversion;
 with Ada.Unchecked_Deallocation;
 
-with Interfaces.C.Strings;
-
 package body YAML is
 
    use type C_Int;
@@ -100,6 +98,8 @@ package body YAML is
    function Wrap (M : C_Mark_T) return Mark_Type is
      ((Line => Natural (M.Line) + 1, Column => Natural (M.Column) + 1));
 
+   function Wrap (Error_View : C_Parser_Error_View) return Error_Type;
+
    function Convert (S : String_Access) return C_Char_Access is
       Char_Array : C_Char_Array with Address => S.all'Address;
    begin
@@ -146,6 +146,61 @@ package body YAML is
          Initialize_After_Allocation (Parser);
       end if;
    end Discard_Input;
+
+   function Wrap (Error_View : C_Parser_Error_View) return Error_Type is
+
+      function Convert
+        (S : Interfaces.C.Strings.chars_ptr)
+         return Ada.Strings.Unbounded.Unbounded_String
+      is (Ada.Strings.Unbounded.To_Unbounded_String
+            (Interfaces.C.Strings.Value (S)));
+
+      Kind    : Error_Kind renames Error_View.Error;
+      Problem : constant Ada.Strings.Unbounded.Unbounded_String :=
+         Convert (Error_View.Problem);
+
+      Problem_Offset             : Natural;
+      Problem_Value              : Integer;
+      Context                    : Ada.Strings.Unbounded.Unbounded_String;
+      Context_Mark, Problem_Mark : Mark_Type;
+   begin
+      case Kind is
+         when Reader_Error =>
+            Problem_Offset := Natural (Error_View.Problem_Offset);
+            Problem_Value := Integer (Error_View.Problem_Value);
+
+         when Scanner_Error | Parser_Error =>
+            Context := Convert (Error_View.Context);
+            Context_Mark := Wrap (Error_View.Context_Mark);
+            Problem_Mark := Wrap (Error_View.Problem_Mark);
+
+         when others =>
+            null;
+      end case;
+
+      case Kind is
+         when No_Error =>
+            return (No_Error, Problem);
+         when Composer_Error =>
+            return (Composer_Error, Problem);
+         when Memory_Error =>
+            return (Memory_Error, Problem);
+         when Writer_Error =>
+            return (Writer_Error, Problem);
+         when Emitter_Error =>
+            return (Emitter_Error, Problem);
+
+         when Reader_Error =>
+            return (Reader_Error, Problem, Problem_Offset, Problem_Value);
+
+         when Scanner_Error =>
+            return (Scanner_Error,
+                    Problem, Context, Context_Mark, Problem_Mark);
+         when Parser_Error =>
+            return (Parser_Error,
+                    Problem, Context, Context_Mark, Problem_Mark);
+      end case;
+   end Wrap;
 
    ----------
    -- Misc --
@@ -310,6 +365,59 @@ package body YAML is
       return No_Node_Ref;
    end Item;
 
+   function Image (Error : Error_Type) return String is
+
+      function "+" (US : Ada.Strings.Unbounded.Unbounded_String) return String
+         renames Ada.Strings.Unbounded.To_String;
+
+      function Problem_Image
+        (Text : Ada.Strings.Unbounded.Unbounded_String;
+         Mark : Mark_Type) return String
+      is (+Text & " " & "at line" & Natural'Image (Mark.Line)
+          & ", column" & Natural'Image (Mark.Column));
+
+   begin
+      case Error.Kind is
+         when No_Error =>
+            return "no error";
+         when Reader_Error =>
+            declare
+               Value : constant String :=
+                 (if Error.Problem_Value /= -1
+                  then Integer'Image (Error.Problem_Value)
+                  else "");
+            begin
+               return "reader error: " & (+Error.Problem) & ":" & Value
+                      & " at offset" & Natural'Image (Error.Problem_Offset);
+            end;
+
+         when Scanner_Error | Parser_Error =>
+            declare
+               Kind : constant String :=
+                 (case Error.Kind is
+                  when Scanner_Error => "scanner error",
+                  when Parser_Error  => "parser error",
+                  when others        => raise Program_Error);
+               Context : constant String :=
+                 (if Ada.Strings.Unbounded.Length (Error.Context) > 0
+                  then Problem_Image (Error.Context, Error.Context_Mark) & ": "
+                  else "");
+            begin
+               return Kind & ": " & Context
+                      & Problem_Image (Error.Problem, Error.Problem_Mark);
+            end;
+
+         when Composer_Error =>
+            return "composer error";
+         when Memory_Error =>
+            return "memory error";
+         when Writer_Error =>
+            return "writer error";
+         when Emitter_Error =>
+            return "emitter error";
+      end case;
+   end Image;
+
    function Has_Input (P : Parser_Type'Class) return Boolean is
    begin
       return P.Input_String /= null or else P.Input_File /= No_File_Ptr;
@@ -361,14 +469,23 @@ package body YAML is
 
    procedure Load
      (Parser   : in out Parser_Type'Class;
+      Error    : out Error_Type;
       Document : in out Document_Type'Class) is
    begin
       Document.Finalize;
       if C_Parser_Load
         (Parser.C_Parser, Document.C_Doc'Unrestricted_Access) /= 1
       then
-         --  TODO: determine a good error handling scheme
-         raise Program_Error;
+         declare
+            Error_View_Address : constant System.Address :=
+               System.Address (Parser.C_Parser);
+            Error_View : C_Parser_Error_View
+               with Import     => True,
+                    Convention => Ada,
+                    Address    => Error_View_Address;
+         begin
+            Error := Wrap (Error_View);
+         end;
       end if;
       Document.To_Delete := True;
    end Load;
