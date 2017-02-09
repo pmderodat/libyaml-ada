@@ -261,6 +261,11 @@ package body YAML is
       return No_Node_Ref;
    end Item;
 
+   function Has_Input (P : Parser_Type'Class) return Boolean is
+   begin
+      return P.Input_String /= null or else P.Input_File /= No_File_Ptr;
+   end Has_Input;
+
    procedure Set_Input_String
      (Parser   : in out Parser_Type'Class;
       Input    : String;

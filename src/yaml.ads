@@ -87,6 +87,9 @@ package YAML is
    type Parser_Type is tagged limited private;
    --  YAML document parser
 
+   function Has_Input (P : Parser_Type'Class) return Boolean;
+   --  Return whether a Set_Input_* procedure was called on P
+
    type Encoding_Type is
      (Any_Encoding,
       --  Let the parser choose the encoding
@@ -106,7 +109,8 @@ package YAML is
    procedure Set_Input_String
      (Parser   : in out Parser_Type'Class;
       Input    : String;
-      Encoding : Encoding_Type);
+      Encoding : Encoding_Type)
+      with Pre => not Parser.Has_Input;
    --  Set a string input. This maintains a copy of Input in Parser.
 
    File_Error : exception;
@@ -116,7 +120,8 @@ package YAML is
    procedure Set_Input_File
      (Parser   : in out Parser_Type'Class;
       Filename : String;
-      Encoding : Encoding_Type);
+      Encoding : Encoding_Type)
+      with Pre => not Parser.Has_Input;
    --  Set a file input. This opens Filename until the parser is destroyed or
    --  until another Set_Input_* procedure is successfuly called. If an error
    --  occurs while opening the file, raise a File_Error and leave the parser
@@ -124,7 +129,8 @@ package YAML is
 
    procedure Load
      (Parser   : in out Parser_Type'Class;
-      Document : in out Document_Type'Class);
+      Document : in out Document_Type'Class)
+      with Pre => Parser.Has_Input;
    --  Parse the input stream and produce the next YAML document.
    --
    --  Call this function subsequently to produce a sequence of documents
